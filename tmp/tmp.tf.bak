@@ -1,0 +1,39 @@
+variable "agent_version" {
+  type = set(string)
+  default = [
+    "4841750",
+    "4841751",
+    "4841752",
+    "4841753",
+    "4841754",
+    "4841755",
+    "4841756",
+    "4841757"
+  ]
+}
+
+resource "docker_image" "versioning" {
+  name = "itzconnor/agent:${var.agent_version}"
+}
+
+
+resource "docker_container" "agent" {
+  for_each = {
+    for v in var.agent_version : "2.41.${v}" => {
+      name    = "agent-${v}"
+      image   = "agent:${v}"
+      restart = "unless-stopped"
+      command = ["/SSR/SA-linux-64", "--start"]
+    }
+  }
+
+  name    = each.value["name"]
+  image   = each.value["image"]
+  restart = each.value["restart"]
+  command = each.value["command"]
+
+  volumes {
+    host_path      = "/root/docker/agent/${each.key}/linux"
+    container_path = "/SSR"
+  }
+}
